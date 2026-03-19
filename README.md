@@ -7,9 +7,15 @@ This tool is part of the **CloudPedagogy AI Capability Tools** suite.
 
 ---
 
-## 🌐 Live Application
+## 🌐 Live Hosted Version
 
 👉 http://cloudpedagogy-ai-capability-gaps-risk.s3-website-us-east-1.amazonaws.com/
+
+---
+
+## 🖼️ Screenshot
+
+![AI Capability Gaps & Risk Diagnostic Screenshot](./assets/screenshot.png)
 
 ---
 
