@@ -6,6 +6,13 @@ It helps teams surface gaps, imbalances, and risk signals to support reflective 
 This tool is part of the **CloudPedagogy AI Capability Tools** suite.
 
 ---
+
+## 🌐 Live Application
+
+👉 http://cloudpedagogy-ai-capability-gaps-risk.s3-website-us-east-1.amazonaws.com/
+
+---
+
 ## 🛠️ Getting Started
 
 ### Clone the repository
