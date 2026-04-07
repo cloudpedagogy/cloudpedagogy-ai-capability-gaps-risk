@@ -22,12 +22,15 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="brand">
-          <div className="brand__title">CloudPedagogy</div>
-          <div className="brand__subtitle">Gaps &amp; Risk Diagnostic</div>
+          <a href="https://www.cloudpedagogy.com/" className="brand__title" target="_blank" rel="noopener noreferrer">
+            CloudPedagogy
+          </a>
+          <div className="brand__subtitle">AI Capability Gaps & Risk</div>
+
         </div>
         <nav className="nav">
           <button
-            className="link"
+            className="btn btn--secondary"
             onClick={() => {
               setStage("intro");
               setInput(null);
@@ -66,10 +69,10 @@ export default function App() {
 
       <footer className="footer">
         <div className="fineprint">
-          This tool is capability-led and reflective. It supports interpretation and discussion — it is not a risk register,
-          compliance audit, benchmarking instrument, or automated decision system.
+          CloudPedagogy · Governance-ready AI and curriculum systems
         </div>
       </footer>
+
     </div>
   );
 }

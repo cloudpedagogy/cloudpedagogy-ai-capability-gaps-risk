@@ -30,6 +30,7 @@ export default function IntroView({ onStart }: { onStart: () => void }) {
           Start diagnostic
         </button>
       </div>
+
     </div>
   );
 }

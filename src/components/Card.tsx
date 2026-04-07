@@ -11,5 +11,6 @@ export default function Card(props: { title?: string; children: ReactNode; right
       )}
       <div className="card__body">{props.children}</div>
     </section>
+
   );
 }
