@@ -12,13 +12,27 @@
   -moz-osx-font-smoothing: grayscale;
 
   /* Design Tokens */
+  --color-text-primary: #111111;
+  --color-text-secondary: #555555;
+  --color-border-default: #e0e0e0;
+  --color-border-strong: #000000;
+
   --color-bg: #FFFFFF;
-  --color-primary: #111111;
+  --color-primary: var(--color-text-primary);
   --color-secondary: #444444;
-  --color-muted: #666666;
-  --color-border: #E5E7EB;
+  --color-muted: var(--color-text-secondary);
+  --color-border: var(--color-border-default);
+
+  --font-size-body: 14px;
+  --font-size-meta: 13px;
+  --font-size-small: 12px;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
   --radius: 6px;
-  --spacing: 8px;
+  --spacing: var(--spacing-sm);
 }
 
 * { box-sizing: border-box; }
@@ -38,10 +52,17 @@ a {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
+  transition: opacity 0.2s;
 }
 
 a:hover {
-  color: var(--color-secondary);
+  opacity: 0.8;
+}
+
+a:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.2);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -124,7 +145,7 @@ input, select, textarea {
 }
 
 .fineprint {
-  font-size: 0.75rem;
+  font-size: var(--font-size-small);
   color: var(--color-muted);
   text-align: left;
 }
@@ -176,7 +197,7 @@ input, select, textarea {
 .btn {
   padding: 10px 20px;
   border-radius: var(--radius);
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   font-weight: 500;
   transition: all 0.2s;
   border: 1px solid transparent;
@@ -184,6 +205,11 @@ input, select, textarea {
   align-items: center;
   justify-content: center;
   text-decoration: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.2);
+  outline-offset: 2px;
 }
 
 .btn:disabled {
@@ -218,7 +244,7 @@ input, select, textarea {
   align-items: center;
   padding: 4px 10px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   font-weight: 500;
   background: #F3F4F6;
   color: var(--color-secondary);
@@ -256,7 +282,7 @@ input, select, textarea {
 }
 
 .field__label {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
   font-weight: 500;
   color: var(--color-muted);
 }
@@ -273,9 +299,9 @@ input[type="text"], input[type="number"], input:not([type]), select, textarea {
 }
 
 input:focus, select:focus, textarea:focus {
-  outline: none;
+  outline: 2px solid rgba(0,0,0,0.2);
+  outline-offset: 2px;
   border-color: #9CA3AF;
-  box-shadow: 0 0 0 1px #F3F4F6;
 }
 
 .domainTable {
@@ -309,7 +335,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .domainRow__desc {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
   color: var(--color-muted);
 }
 
@@ -330,7 +356,7 @@ input:focus, select:focus, textarea:focus {
   align-items: flex-start;
   gap: 10px;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: var(--font-size-body);
   color: var(--color-secondary);
 }
 
@@ -340,13 +366,13 @@ input:focus, select:focus, textarea:focus {
 
 .muted {
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
 }
 
 /* Results Specific */
 
 .pill {
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   font-weight: 500;
   color: var(--color-muted);
 }
@@ -359,7 +385,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .kicker {
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -418,7 +444,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .metaPill {
-  font-size: 0.75rem;
+  font-size: var(--font-size-small);
   color: var(--color-muted);
 }
 
@@ -433,7 +459,7 @@ input:focus, select:focus, textarea:focus {
 
 .btn--small {
   padding: 4px 10px;
-  font-size: 0.75rem;
+  font-size: var(--font-size-meta);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-secondary);
@@ -455,7 +481,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .whyList {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
   color: var(--color-secondary);
   list-style: none;
   padding: 0;
@@ -490,7 +516,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .barrow__label {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
   font-weight: 500;
   color: var(--color-secondary);
 }
@@ -509,7 +535,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .barrow__value {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-meta);
   font-weight: 600;
   color: var(--color-primary);
   text-align: right;
