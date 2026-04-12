@@ -5,6 +5,7 @@ export type SignalLevel = "Info" | "Watch" | "Concern";
 export type RiskSignal = {
   id: string;
   level: SignalLevel;
+  weight: number; // 1-5 indicative contribution
   title: string;
   rationale: string;
   prompts: string[];
@@ -18,8 +19,11 @@ export type DiagnosticResult = {
     key: DomainKey;
     label: string;
     score: number;
+    gap: number;
   }>;
   signals: RiskSignal[];
+  rankedGaps: Array<{ key: DomainKey; label: string; severity: "Critical" | "High" | "Moderate" | "Low" }>;
+  priorities: RiskSignal[];
   summary: {
     strengths: string[];
     gaps: string[];
@@ -54,11 +58,15 @@ function coverageSpread(coverage: Partial<Record<DomainKey, number>>) {
 }
 
 export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
-  const domainStats = DOMAINS.map((d) => ({
-    key: d.key,
-    label: d.label,
-    score: input.scores[d.key] ?? 0,
-  }));
+  const domainStats = DOMAINS.map((d) => {
+    const score = input.scores[d.key] ?? 0;
+    return {
+      key: d.key,
+      label: d.label,
+      score,
+      gap: Number((4 - score).toFixed(2)),
+    };
+  });
 
   const scores = domainStats.map((d) => d.score);
   const averageScore = Number(avg(scores).toFixed(2));
@@ -69,6 +77,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   const scoreSpread = spread(scores);
 
   const signals: RiskSignal[] = [];
+  const highStakesMultiplier = input.signals?.highStakesUse || false;
 
   // 1) Low-floor signal (any domain <= 1)
   const veryLow = domainStats.filter((d) => d.score <= 1);
@@ -76,6 +85,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
     signals.push({
       id: "low-floor",
       level: "Concern",
+      weight: 4 + (highStakesMultiplier ? 1 : 0),
       title: "Low capability floor in key areas",
       rationale:
         `One or more domains are at a very early stage (${veryLow.map((d) => d.label).join(", ")}). ` +
@@ -91,9 +101,11 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
 
   // 2) Imbalance signal (spread >= 2)
   if (scoreSpread >= 2) {
+    const weight = scoreSpread >= 3 ? 5 : 3;
     signals.push({
       id: "imbalance",
       level: scoreSpread >= 3 ? "Concern" : "Watch",
+      weight: weight,
       title: "Capability imbalance across domains",
       rationale:
         `Your scores vary widely (spread = ${scoreSpread}). Imbalance often indicates uneven development: ` +
@@ -110,12 +122,12 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   // 3) Ethics/governance under-strength (contextual severity)
   const ethics = input.scores.ethics ?? 0;
   const governance = input.scores.governance ?? 0;
-  const highStakesMultiplier = input.signals.highStakesUse || input.signals.publicFacing || input.signals.sensitiveData;
 
   if ((ethics <= 2 || governance <= 2) && highStakesMultiplier) {
     signals.push({
       id: "ethics-gov-exposure",
       level: "Concern",
+      weight: 5,
       title: "Ethics/Governance exposure under high-stakes conditions",
       rationale:
         "You’ve indicated high-stakes, public-facing, or sensitive-data use. When Ethics/Equity/Impact " +
@@ -135,6 +147,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
     signals.push({
       id: "vendor-fragility",
       level: "Watch",
+      weight: 3,
       title: "Potential fragility from vendor/tool reliance",
       rationale:
         "Heavy reliance on a single toolchain can create brittleness if policies, pricing, access, or features change. " +
@@ -154,6 +167,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
     signals.push({
       id: "ownership-ambiguity",
       level: "Watch",
+      weight: 3,
       title: "Role clarity and accountability may be under-defined",
       rationale:
         "You’ve indicated unclear ownership. Without explicit roles for AI-supported work, responsibility can drift " +
@@ -174,6 +188,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
       signals.push({
         id: "coverage-imbalance",
         level: cSpread >= 40 ? "Concern" : "Watch",
+        weight: cSpread >= 40 ? 4 : 2,
         title: "Capability coverage may be uneven across the programme/system",
         rationale:
           `Your optional coverage estimates vary significantly (spread ≈ ${Math.round(cSpread)}%). ` +
@@ -203,6 +218,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
     signals.push({
       id: "no-major-signals",
       level: "Info",
+      weight: 1,
       title: "No major risk patterns detected from the inputs provided",
       rationale:
         "Based on your inputs, there are no standout imbalance or low-floor patterns. Use the prompts below to deepen reflection and validate this with stakeholders.",
@@ -215,11 +231,25 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
     });
   }
 
+  // Ranked Gaps
+  const rankedGaps = [...domainStats]
+    .sort((a, b) => b.gap - a.gap)
+    .map((d) => ({
+      key: d.key,
+      label: d.label,
+      severity: d.gap >= 3 ? ("Critical" as const) : d.gap >= 2 ? ("High" as const) : d.gap >= 1 ? ("Moderate" as const) : ("Low" as const),
+    }));
+
+  // priorities: top 3 signals by weight
+  const priorities = [...signals].sort((a, b) => b.weight - a.weight).slice(0, 3);
+
   return {
     band,
     averageScore,
     domainStats,
     signals,
+    rankedGaps,
+    priorities,
     summary: { strengths, gaps, stabilisers },
   };
 }

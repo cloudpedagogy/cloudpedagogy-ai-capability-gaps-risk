@@ -5,6 +5,7 @@ import SignalBadge from "../components/SignalBadge";
 import type { DiagnosticInput, DomainKey } from "../domain/model";
 import type { DiagnosticResult } from "../engine/analysis";
 import { DOMAINS } from "../domain/model";
+import { downloadStressTestJson } from "../engine/export";
 
 const FRAMEWORK_EDITION = "CloudPedagogy AI Capability Framework (2026 Edition)";
 
@@ -14,6 +15,26 @@ function domainLabel(key: DomainKey): string {
 
 function domainDescription(key: DomainKey): string {
   return DOMAINS.find((d) => d.key === key)?.description ?? "";
+}
+
+function WeightBadge({ weight }: { weight: number }) {
+  const label = weight >= 5 ? "Critical" : weight >= 4 ? "High" : weight >= 3 ? "Medium" : "Low";
+  const color = weight >= 4 ? "#dc2626" : weight >= 3 ? "#d97706" : "#4b5563";
+  
+  return (
+    <span style={{ 
+      fontSize: "10px", 
+      fontWeight: 700, 
+      textTransform: "uppercase", 
+      padding: "2px 6px", 
+      borderRadius: "4px", 
+      border: `1px solid ${color}`,
+      color: color,
+      marginLeft: "8px"
+    }}>
+      Weight: {label}
+    </span>
+  );
 }
 
 function whyThisMattersTextForSignal(relatedDomains: DomainKey[]): string {
@@ -57,6 +78,12 @@ function buildExportText(input: DiagnosticInput, result: DiagnosticResult, gener
   lines.push(`Average score: ${result.averageScore}/4`);
   lines.push("");
 
+  lines.push("TOP PRIORITIES:");
+  result.priorities.forEach((p, i) => {
+    lines.push(`${i + 1}. ${p.title} (Weight: ${p.weight})`);
+  });
+  lines.push("");
+
   lines.push("Domain scores (0–4):");
   for (const d of DOMAINS) {
     const score = input.scores[d.key] ?? 0;
@@ -64,33 +91,16 @@ function buildExportText(input: DiagnosticInput, result: DiagnosticResult, gener
   }
   lines.push("");
 
-  if (input.coverage && Object.keys(input.coverage).length > 0) {
-    lines.push("Optional coverage estimates (0–100%):");
-    for (const d of DOMAINS) {
-      const v = input.coverage[d.key];
-      if (typeof v === "number") lines.push(`- ${d.label}: ${v}%`);
-    }
-    lines.push("");
-  }
-
-  lines.push("Strength signals:");
-  for (const s of result.summary.strengths) lines.push(`- ${s}`);
+  lines.push("RANKED CAPABILITY GAPS:");
+  result.rankedGaps.forEach(g => {
+    lines.push(`- [${g.severity}] ${g.label}`);
+  });
   lines.push("");
-
-  lines.push("Gap signals:");
-  for (const g of result.summary.gaps) lines.push(`- ${g}`);
-  lines.push("");
-
-  if (result.summary.stabilisers.length > 0) {
-    lines.push("Stabilisers already present:");
-    for (const x of result.summary.stabilisers) lines.push(`- ${x}`);
-    lines.push("");
-  }
 
   lines.push("Gaps & risk signals (for discussion):");
   result.signals.forEach((sig, idx) => {
     lines.push("");
-    lines.push(`${idx + 1}. [${sig.level}] ${sig.title}`);
+    lines.push(`${idx + 1}. [${sig.level}] ${sig.title} (Weight: ${sig.weight})`);
     lines.push(`   Rationale: ${sig.rationale}`);
     if (sig.relatedDomains?.length) {
       lines.push(`   Related domains: ${sig.relatedDomains.map(domainLabel).join("; ")}`);
@@ -115,11 +125,7 @@ export default function ResultsView(props: {
   const { input, result } = props;
 
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
-
-  // Auto-open “Why this matters” for Concern signals only
   const [openWhy, setOpenWhy] = useState<Record<string, boolean>>({});
-
-  // Freeze a generated-at timestamp for this render (so copy/export is consistent)
   const [generatedAt] = useState<string>(() => nowTimestampUTC());
 
   useEffect(() => {
@@ -141,7 +147,6 @@ export default function ResultsView(props: {
       setCopyStatus("copied");
       window.setTimeout(() => setCopyStatus("idle"), 1600);
     } catch {
-      // Fallback for older/locked-down browsers
       try {
         const ta = document.createElement("textarea");
         ta.value = exportText;
@@ -169,7 +174,7 @@ export default function ResultsView(props: {
   return (
     <div className="stack">
       <Card
-        title="Summary"
+        title="Diagnostic Summary"
         right={
           <span className="pill">
             {result.band} · Avg {result.averageScore}/4
@@ -188,43 +193,69 @@ export default function ResultsView(props: {
         <p className="muted" style={{ marginTop: 8 }}>
           Generated: {generatedAt} · {FRAMEWORK_EDITION}
         </p>
-
-        <div className="split">
-          <div>
-            <div className="kicker">Strength signals</div>
-            <ul>
-              {result.summary.strengths.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="kicker">Gap signals</div>
-            <ul>
-              {result.summary.gaps.map((g) => (
-                <li key={g}>{g}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {result.summary.stabilisers.length > 0 && (
-          <>
-            <div className="kicker">Stabilisers already present</div>
-            <ul>
-              {result.summary.stabilisers.map((x) => (
-                <li key={x}>{x}</li>
-              ))}
-            </ul>
-          </>
-        )}
       </Card>
 
-      <Card title="Domain profile">
-        <DomainBars scores={input.scores} />
-      </Card>
+      <div style={{ borderLeft: "4px solid #111" }}>
+        <Card title="Top 3 Priority Risks">
+          <p className="muted" style={{ marginBottom: "16px" }}>
+            These are the most critical risk signals identified based on your organisational context and capability floor.
+          </p>
+          <div className="signals">
+            {result.priorities.map((p, idx) => (
+              <div key={p.id} className="signal" style={{ paddingBottom: idx === result.priorities.length -1 ? 0 : "16px", borderBottom: idx === result.priorities.length -1 ? "none" : "1px solid #EEE" }}>
+                 <div className="signal__head" style={{ marginBottom: "8px" }}>
+                    <SignalBadge level={p.level} />
+                    <div className="signal__title" style={{ fontSize: "1rem" }}>{p.title}</div>
+                    <WeightBadge weight={p.weight} />
+                 </div>
+                 <p className="signal__rationale" style={{ fontSize: "0.875rem", marginBottom: 0 }}>{p.rationale}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
 
-      <Card title="Gaps & risk signals">
+      <div className="grid2">
+        <Card title="Domain profile">
+          <DomainBars scores={input.scores} />
+        </Card>
+
+        <Card title="Ranked Capability Gaps">
+          <p className="muted" style={{ marginBottom: "16px" }}>
+            The largest deficits between current capability and an established baseline (score 4).
+          </p>
+          <div className="domainTable">
+            {(() => {
+              const GAP_EXPLANATIONS: Record<DomainKey, string> = {
+                awareness: "Low score in Awareness → limited system visibility and frontline understanding",
+                coagency: "Low score in Co-agency → reduced student-staff partnership and agency",
+                practice: "Low score in Practice → lack of applied AI experience and workflow integration",
+                ethics: "Low score in Ethics → increased governance and academic integrity risk",
+                governance: "Low score in Governance → unclear institutional accountability and risk controls",
+                renewal: "Low score in Renewal → system fragility and lack of long-term sustainability"
+              };
+
+              return result.rankedGaps.map((g) => (
+                <div key={g.key} className="domainRow" style={{ padding: "12px 0", borderBottom: "1px solid #f9fafb" }}>
+                  <div className="domainRow__left">
+                    <div className="domainRow__label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>{g.label}</div>
+                    <div className="text-secondary" style={{ fontSize: "11px", marginTop: "4px", fontStyle: "italic", color: "#b45309" }}>
+                      {GAP_EXPLANATIONS[g.key] || "Gap identified in domain capability."}
+                    </div>
+                  </div>
+                  <div className="domainRow__right">
+                    <span className={`tag ${g.severity === 'Critical' ? 'tag--critical' : ''}`} style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase" }}>
+                      {g.severity}
+                    </span>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Full Risk Signals & Discussion Prompts">
         <div className="signals">
           {result.signals.map((s) => {
             const isOpen = !!openWhy[s.id];
@@ -235,6 +266,7 @@ export default function ResultsView(props: {
                 <div className="signal__head">
                   <SignalBadge level={s.level} />
                   <div className="signal__title">{s.title}</div>
+                  <WeightBadge weight={s.weight} />
                 </div>
 
                 <p className="signal__rationale">{s.rationale}</p>
@@ -260,7 +292,6 @@ export default function ResultsView(props: {
                 {isOpen && (
                   <div className="whyPanel">
                     <div className="whyPanel__lead">{whyThisMattersTextForSignal(related)}</div>
-
                     {related.length > 0 && (
                       <>
                         <div className="kicker">Domain context</div>
@@ -271,20 +302,6 @@ export default function ResultsView(props: {
                               <span className="muted">{domainDescription(dk)}</span>
                             </li>
                           ))}
-                        </ul>
-
-                        <div className="kicker">How to use this in a committee or workshop</div>
-                        <ul className="whyList">
-                          <li>
-                            Ask: <strong>“Where does this show up in our current workflow?”</strong>
-                          </li>
-                          <li>
-                            Ask: <strong>“Who carries responsibility here — and is that explicit?”</strong>
-                          </li>
-                          <li>
-                            Agree one: <strong>evidence to collect</strong> or <strong>small stabilising step</strong>{" "}
-                            before scaling use.
-                          </li>
                         </ul>
                       </>
                     )}
@@ -303,10 +320,9 @@ export default function ResultsView(props: {
         </div>
       </Card>
 
-      <Card title="Export / use">
+      <Card title="Export / Use">
         <p className="muted">
-          Tip: copy/paste the summary and signals into committee papers, QA notes, workshop minutes, or programme
-          documentation. The value is in the discussion you run next.
+          Use the <strong>Stress Test Export</strong> to feed these results into simulation tools, or copy the summary for discussion.
         </p>
 
         <div className="actions actions--between">
@@ -315,6 +331,9 @@ export default function ResultsView(props: {
           </button>
 
           <div className="actions">
+            <button className="btn" onClick={() => downloadStressTestJson(input, result)}>
+              Download for Stress Test (.json)
+            </button>
             <button className="btn btn--primary" onClick={copyToClipboard}>
               {copyStatus === "copied"
                 ? "Copied ✓"

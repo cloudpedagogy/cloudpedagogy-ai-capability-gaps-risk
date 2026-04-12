@@ -1,7 +1,26 @@
 # AI Capability Gaps & Risk Diagnostic
 
-A lightweight, browser-based diagnostic tool for interpreting AI capability patterns using the CloudPedagogy AI Capability Framework.  
+A lightweight, browser-based diagnostic tool for interpreting AI capability patterns using the CloudPedagogy AI Capability Framework.
 It helps teams surface gaps, imbalances, and risk signals to support reflective discussion, governance conversations, and responsible scaling of AI use in education, research, and public-service contexts.
+
+## 🔗 Role in the CloudPedagogy Ecosystem
+
+**Phase:** Phase 3 — Capability System
+
+**Role:**
+Diagnoses capability imbalances, structural deficits (gaps), and high-priority risks based on reflective capability signals.
+
+**Upstream Inputs:**
+Aggregate score signals and snapshots from the **Capability Assessment Tool** and **Capability Dashboard**.
+
+**Downstream Outputs:**
+Provides diagnostic JSON exports used to parameterize realistic risk scenarios in the **Scenario Stress Test**.
+
+**Does NOT:**
+- Collect primary data from individuals.
+- Perform longitudinal benchmark tracking (this is for the Dashboard).
+
+For a full system overview, see: [SYSTEM_OVERVIEW.md](../SYSTEM_OVERVIEW.md)
 
 This tool is part of the **CloudPedagogy AI Capability Tools** suite.
 
@@ -60,6 +79,29 @@ The production build will be generated in the `dist/` directory and can be deplo
 - Suitable for use in sensitive organisational and governance contexts  
 
 ---
+
+## 🔍 Diagnostic & Prioritisation Features
+
+This tool has been strengthened to serve as the primary diagnostic layer for capability-driven risk:
+
+### 1. Explicit Gap Identification
+The tool now explicitly ranks capability domains by the intensity of their deficit. Domains are categorized from **Low** to **Critical** based on their "Capability Floor," allowing teams to see exactly where structural fragility is highest.
+
+### 2. Top 3 Priority Risks
+Instead of a flat list of signals, the tool now identifies the **Top 3 Risks** based on contribution weights and organisational flags (e.g., sensitive data, public-facing outputs). This provides a clear starting point for committee discussions.
+
+### 3. Transparent Signal Weighting
+Every risk signal now displays its **Contribution Weight**. These weights are dynamic — for example, a "Capability Imbalance" signal becomes more critical if the organisation has also indicated heavy "Vendor Reliance" or "High-Stakes Use."
+
+### 4. Stress Test Integration
+The new **Download for Stress Test** feature generates a descriptive JSON snapshot containing:
+- Domain maturity scores
+- Ranked capability gaps
+- Weighted priority risks
+- Contextual organisational flags
+
+---
+
 ## What this application is
 
 The **AI Capability Gaps & Risk Diagnostic** helps individuals, teams, and organisations:
@@ -143,6 +185,19 @@ The tool generates a structured results view including:
 - interpreted risk and imbalance signals
 - “why this matters” explanations
 - committee- and workshop-ready discussion prompts
+
+### Implementation Roadmap
+- `[x]` Engine & Calculation Updates
+    - `[x]` Update `src/engine/analysis.ts` types and dynamic weighting logic
+    - `[x]` Implement ranking for capability gaps and top 3 priorities
+- `[x]` Structured Export
+    - `[x]` Create `src/engine/export.ts` for Stress Test JSON compatible output
+- `[x]` UI: prioritisation & Transparency
+    - `[x]` Update `src/views/ResultsView.tsx` with Priorities card and weight badges
+    - `[x]` Add Ranked Gaps table/list
+    - `[x]` Add JSON export button
+- `[x]` Finalisation
+    - `[x]` Update `README.md` with diagnostic layer documentation
 
 ### Export / reuse
 
