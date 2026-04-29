@@ -10,6 +10,8 @@ export function generateStressTestJson(input: DiagnosticInput, result: Diagnosti
     metadata: {
       organisation: input.orgName,
       context: input.contextNotes,
+      capability_notes: input.capabilityNotes,
+      governance_notes: input.governanceNotes,
       timestamp: new Date().toISOString(),
       framework: "CloudPedagogy AI Capability Framework (2026 Edition)"
     },

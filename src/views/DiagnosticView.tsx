@@ -45,7 +45,6 @@ export default function DiagnosticView(props: {
     governance: 0,
     renewal: 0,
   });
-
   const [signals, setSignals] = useState({
     highStakesUse: false,
     publicFacing: false,
@@ -53,6 +52,10 @@ export default function DiagnosticView(props: {
     vendorReliance: false,
     unclearOwnership: false,
   });
+
+  const [capabilityNotes, setCapabilityNotes] = useState("");
+  const [governanceNotes, setGovernanceNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
 
   const canSubmit = useMemo(() => orgName.trim().length > 0, [orgName]);
 
@@ -163,6 +166,46 @@ export default function DiagnosticView(props: {
         )}
       </Card>
 
+      <Card title="Capability & Governance Notes (Optional)">
+        <button 
+          className="btn btn--secondary btn--small" 
+          onClick={() => setShowNotes(!showNotes)}
+          style={{ marginBottom: showNotes ? "16px" : 0 }}
+        >
+          {showNotes ? "Hide notes" : "Show notes"}
+        </button>
+
+        {showNotes && (
+          <div className="stack" style={{ marginTop: "8px" }}>
+            <p className="muted" style={{ fontSize: "0.8rem" }}>
+              /* Lightweight capability and governance layer - Optional, non-blocking, and does not alter core workflow */
+            </p>
+            <div className="grid2">
+              <label className="field">
+                <div className="field__label" style={{ fontSize: "0.8rem" }}>Capability Notes</div>
+                <textarea
+                  value={capabilityNotes}
+                  onChange={(e) => setCapabilityNotes(e.target.value)}
+                  placeholder="What capability does this support? Suggested AI use patterns..."
+                  rows={3}
+                  style={{ fontSize: "0.8rem", fontFamily: "inherit", border: "1px solid #ccc", padding: "8px" }}
+                />
+              </label>
+              <label className="field">
+                <div className="field__label" style={{ fontSize: "0.8rem" }}>Governance Notes</div>
+                <textarea
+                  value={governanceNotes}
+                  onChange={(e) => setGovernanceNotes(e.target.value)}
+                  placeholder="AI involvement, assumptions, risks, rationale, human review notes..."
+                  rows={3}
+                  style={{ fontSize: "0.8rem", fontFamily: "inherit", border: "1px solid #ccc", padding: "8px" }}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+      </Card>
+
       <div className="actions actions--between">
         <button className="btn" onClick={props.onBack}>
           Back
@@ -177,6 +220,8 @@ export default function DiagnosticView(props: {
               scores,
               coverage: includeCoverage ? coverage : undefined,
               signals,
+              capabilityNotes: capabilityNotes.trim() || undefined,
+              governanceNotes: governanceNotes.trim() || undefined,
             })
           }
         >

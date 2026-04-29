@@ -20,7 +20,6 @@ Provides diagnostic JSON exports used to parameterize realistic risk scenarios i
 - Collect primary data from individuals.
 - Perform longitudinal benchmark tracking (this is for the Dashboard).
 
-For a full system overview, see: [SYSTEM_OVERVIEW.md](../SYSTEM_OVERVIEW.md)
 
 This tool is part of the **CloudPedagogy AI Capability Tools** suite.
 
@@ -271,6 +270,13 @@ embed or enforce any specific CloudPedagogy framework.
 
 CloudPedagogy develops open, governance-credible resources for building confident, responsible AI capability across education, research, and public service.
 
-- Website: https://www.cloudpedagogy.com/
 - Framework: https://github.com/cloudpedagogy/cloudpedagogy-ai-capability-framework
+
+---
+
+## Capability and Governance
+This tool supports both AI capability development and lightweight governance.
+- **Capability** is developed through structured interaction with real workflows
+- **Governance** is supported through optional fields that make assumptions, risks, and decisions visible
+All governance inputs are optional and designed to support — not constrain — professional judgement.
 

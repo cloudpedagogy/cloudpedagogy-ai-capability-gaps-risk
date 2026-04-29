@@ -109,6 +109,17 @@ function buildExportText(input: DiagnosticInput, result: DiagnosticResult, gener
     sig.prompts.forEach((p) => lines.push(`   - ${p}`));
   });
 
+  if (input.capabilityNotes || input.governanceNotes) {
+    lines.push("");
+    lines.push("CAPABILITY & GOVERNANCE NOTES:");
+    if (input.capabilityNotes) {
+      lines.push(`- Capability: ${input.capabilityNotes}`);
+    }
+    if (input.governanceNotes) {
+      lines.push(`- Governance: ${input.governanceNotes}`);
+    }
+  }
+
   lines.push("");
   lines.push(
     "Note: This output is reflective and interpretive. It is not a compliance audit, risk register, or automated decision system."
@@ -319,6 +330,25 @@ export default function ResultsView(props: {
           })}
         </div>
       </Card>
+
+      {(input.capabilityNotes || input.governanceNotes) && (
+        <Card title="Capability & Governance Notes">
+          <div className="grid2">
+            {input.capabilityNotes && (
+              <div className="note-section">
+                <div className="kicker">Capability</div>
+                <p style={{ fontSize: "0.875rem", whiteSpace: "pre-wrap" }}>{input.capabilityNotes}</p>
+              </div>
+            )}
+            {input.governanceNotes && (
+              <div className="note-section">
+                <div className="kicker">Governance</div>
+                <p style={{ fontSize: "0.875rem", whiteSpace: "pre-wrap" }}>{input.governanceNotes}</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       <Card title="Export / Use">
         <p className="muted">

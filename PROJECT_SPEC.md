@@ -53,3 +53,9 @@ Focuses on systemic "Signals" (like Vendor Reliance or High Stakes) that transce
 
 ## 15. Anything Unclear or Inferred from Repo Contents
 The exact weightings between "Signals" and "Maturity Scores" in the final risk calculation are inferred to be a simple additive model.
+
+## 16. Capability and Governance Alignment
+This tool is aligned with the CloudPedagogy Capability and Governance standard.
+- **Capability**: The tool supports development of practical AI capability through structured interaction and workflow use.
+- **Governance**: The tool includes lightweight, optional fields that make assumptions, risks, and decisions visible and reviewable.
+This alignment ensures the tool supports both effective use of AI and responsible, accountable practice.

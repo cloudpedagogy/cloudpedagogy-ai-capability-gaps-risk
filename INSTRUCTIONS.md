@@ -22,7 +22,7 @@ This tool translates raw capability scores into an active risk assessment. It pi
 
 ---
 ### 6. How to Use (Step-by-Step)
-1. Complete the setup phase, establishing the diagnostic context and entering your baseline domain scores.
+1. Complete the setup phase, establishing the diagnostic context and entering your baseline domain scores. The diagnostic is a **conversation starter**, not a final audit.
 2. Select environmental risk signals (e.g., "High-stakes use", "Sensitive data").
 3. View the "Diagnostic Summary" and check the organization's overarching risk band.
 4. Review the "Top 3 Priority Risks" to identify the most urgent areas requiring immediate action.
@@ -47,3 +47,10 @@ This tool translates raw capability scores into an active risk assessment. It pi
 ---
 ### 10. Tips
 - Use the "Why this matters" toggle on priority risks to get exact language to use in management reports.
+
+---
+
+## Capability and Governance
+- **How capability is developed**: By using this tool to reflect on workflows, teams develop a more granular understanding of where their AI practice is strong and where it is fragile.
+- **How governance is supported**: The optional "Capability & Governance Notes" section allows users to record assumptions, risks, and rationale, making the decision-making process transparent and reviewable.
+- **Optional Fields**: Capability Notes (patterns of use) and Governance Notes (risks/rationale) are provided to enrich the diagnostic without forcing compliance.
