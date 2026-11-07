@@ -20,14 +20,25 @@ function NumberSelect({
   );
 }
 
+type SignalKey = keyof DiagnosticInput["signals"];
+
+const SIGNAL_DEFINITIONS: Array<{ key: SignalKey; label: string }> = [
+  { key: "highStakesUse", label: "High-stakes use (assessment, consequential decisions, clinical, admissions, etc.)" },
+  { key: "publicFacing", label: "Public-facing outputs (published externally or used with external stakeholders)" },
+  { key: "sensitiveData", label: "Sensitive / confidential data involved" },
+  { key: "vendorReliance", label: "Heavy reliance on a single vendor/toolchain" },
+  { key: "unclearOwnership", label: "Unclear ownership/accountability for AI-supported work" },
+];
+
 export default function DiagnosticView(props: {
   onSubmit: (input: DiagnosticInput) => void;
   onBack: () => void;
+  initialInput?: DiagnosticInput | null;
 }) {
-  const [orgName, setOrgName] = useState("My team / organisation");
-  const [contextNotes, setContextNotes] = useState("");
+  const [orgName, setOrgName] = useState(() => props.initialInput?.orgName ?? "My team / organisation");
+  const [contextNotes, setContextNotes] = useState(() => props.initialInput?.contextNotes ?? "");
 
-  const [scores, setScores] = useState<Record<DomainKey, number>>({
+  const [scores, setScores] = useState<Record<DomainKey, number>>(() => props.initialInput?.scores ?? {
     awareness: 2,
     coagency: 2,
     practice: 2,
@@ -36,8 +47,10 @@ export default function DiagnosticView(props: {
     renewal: 2,
   });
 
-  const [includeCoverage, setIncludeCoverage] = useState(false);
-  const [coverage, setCoverage] = useState<Partial<Record<DomainKey, number>>>({
+  const [includeCoverage, setIncludeCoverage] = useState(() =>
+    Boolean(props.initialInput?.coverage && Object.keys(props.initialInput.coverage).length > 0)
+  );
+  const [coverage, setCoverage] = useState<Partial<Record<DomainKey, number>>>(() => props.initialInput?.coverage ?? {
     awareness: 0,
     coagency: 0,
     practice: 0,
@@ -45,7 +58,7 @@ export default function DiagnosticView(props: {
     governance: 0,
     renewal: 0,
   });
-  const [signals, setSignals] = useState({
+  const [signals, setSignals] = useState(() => props.initialInput?.signals ?? {
     highStakesUse: false,
     publicFacing: false,
     sensitiveData: false,
@@ -53,9 +66,11 @@ export default function DiagnosticView(props: {
     unclearOwnership: false,
   });
 
-  const [capabilityNotes, setCapabilityNotes] = useState("");
-  const [governanceNotes, setGovernanceNotes] = useState("");
-  const [showNotes, setShowNotes] = useState(false);
+  const [capabilityNotes, setCapabilityNotes] = useState(() => props.initialInput?.capabilityNotes ?? "");
+  const [governanceNotes, setGovernanceNotes] = useState(() => props.initialInput?.governanceNotes ?? "");
+  const [showNotes, setShowNotes] = useState(() =>
+    Boolean(props.initialInput?.capabilityNotes || props.initialInput?.governanceNotes)
+  );
 
   const canSubmit = useMemo(() => orgName.trim().length > 0, [orgName]);
 
@@ -112,17 +127,11 @@ export default function DiagnosticView(props: {
         }
       >
         <div className="checks">
-          {[
-            ["highStakesUse", "High-stakes use (assessment, consequential decisions, clinical, admissions, etc.)"],
-            ["publicFacing", "Public-facing outputs (published externally or used with external stakeholders)"],
-            ["sensitiveData", "Sensitive / confidential data involved"],
-            ["vendorReliance", "Heavy reliance on a single vendor/toolchain"],
-            ["unclearOwnership", "Unclear ownership/accountability for AI-supported work"],
-          ].map(([key, label]) => (
+          {SIGNAL_DEFINITIONS.map(({ key, label }) => (
             <label key={key} className="check">
               <input
                 type="checkbox"
-                checked={(signals as any)[key]}
+                checked={signals[key]}
                 onChange={(e) => setSignals((p) => ({ ...p, [key]: e.target.checked }))}
               />
               <span>{label}</span>

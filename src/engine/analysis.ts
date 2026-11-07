@@ -1,4 +1,4 @@
-import { DOMAINS, bandForAverage, type CapabilityBand, type DiagnosticInput, type DomainKey } from "../domain/model";
+import { DOMAINS, bandForAverage, clampScore, type CapabilityBand, type DiagnosticInput, type DomainKey } from "../domain/model";
 
 export type SignalLevel = "Info" | "Watch" | "Concern";
 
@@ -45,21 +45,23 @@ function sortByScoreDesc(stats: DiagnosticResult["domainStats"]) {
 }
 
 function spread(scores: number[]) {
-  if (!scores.length) return 0;
-  const min = Math.min(...scores);
-  const max = Math.max(...scores);
+  const valid = scores.filter((s) => typeof s === "number" && !isNaN(s));
+  if (!valid.length) return 0;
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
   return max - min;
 }
 
 function coverageSpread(coverage: Partial<Record<DomainKey, number>>) {
-  const vals = Object.values(coverage).filter((v): v is number => typeof v === "number");
+  const vals = Object.values(coverage).filter((v): v is number => typeof v === "number" && !isNaN(v));
   if (!vals.length) return 0;
   return Math.max(...vals) - Math.min(...vals);
 }
 
 export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   const domainStats = DOMAINS.map((d) => {
-    const score = input.scores[d.key] ?? 0;
+    const rawScore = input?.scores?.[d.key];
+    const score = typeof rawScore === "number" && !isNaN(rawScore) ? clampScore(rawScore) : 0;
     return {
       key: d.key,
       label: d.label,
@@ -77,7 +79,9 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   const scoreSpread = spread(scores);
 
   const signals: RiskSignal[] = [];
-  const highStakesMultiplier = input.signals?.highStakesUse || false;
+  const highStakesMultiplier = Boolean(input?.signals?.highStakesUse);
+  const vendorRelianceFlag = Boolean(input?.signals?.vendorReliance);
+  const unclearOwnershipFlag = Boolean(input?.signals?.unclearOwnership);
 
   // 1) Low-floor signal (any domain <= 1)
   const veryLow = domainStats.filter((d) => d.score <= 1);
@@ -115,13 +119,15 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
         "Where are people improvising because the system lacks guidance or structure?",
         "If you strengthened just one low domain, which would reduce the most downstream risk?",
       ],
-      relatedDomains: [lowest[0].key, lowest[1].key, highest[0].key, highest[1].key],
+      relatedDomains: [lowest[0]?.key, lowest[1]?.key, highest[0]?.key, highest[1]?.key].filter(Boolean) as DomainKey[],
     });
   }
 
   // 3) Ethics/governance under-strength (contextual severity)
-  const ethics = input.scores.ethics ?? 0;
-  const governance = input.scores.governance ?? 0;
+  const ethicsRaw = input?.scores?.ethics;
+  const ethics = typeof ethicsRaw === "number" && !isNaN(ethicsRaw) ? clampScore(ethicsRaw) : 0;
+  const govRaw = input?.scores?.governance;
+  const governance = typeof govRaw === "number" && !isNaN(govRaw) ? clampScore(govRaw) : 0;
 
   if ((ethics <= 2 || governance <= 2) && highStakesMultiplier) {
     signals.push({
@@ -142,8 +148,9 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   }
 
   // 4) Vendor reliance + low renewal/governance
-  const renewal = input.scores.renewal ?? 0;
-  if (input.signals.vendorReliance && (renewal <= 2 || governance <= 2)) {
+  const renewalRaw = input?.scores?.renewal;
+  const renewal = typeof renewalRaw === "number" && !isNaN(renewalRaw) ? clampScore(renewalRaw) : 0;
+  if (vendorRelianceFlag && (renewal <= 2 || governance <= 2)) {
     signals.push({
       id: "vendor-fragility",
       level: "Watch",
@@ -162,8 +169,9 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   }
 
   // 5) Unclear ownership + co-agency/governance
-  const coagency = input.scores.coagency ?? 0;
-  if (input.signals.unclearOwnership && (coagency <= 2 || governance <= 2)) {
+  const coagencyRaw = input?.scores?.coagency;
+  const coagency = typeof coagencyRaw === "number" && !isNaN(coagencyRaw) ? clampScore(coagencyRaw) : 0;
+  if (unclearOwnershipFlag && (coagency <= 2 || governance <= 2)) {
     signals.push({
       id: "ownership-ambiguity",
       level: "Watch",
@@ -182,7 +190,7 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   }
 
   // 6) Optional coverage imbalance (from programme mapping lens)
-  if (input.coverage && Object.keys(input.coverage).length > 0) {
+  if (input?.coverage && Object.keys(input.coverage).length > 0) {
     const cSpread = coverageSpread(input.coverage);
     if (cSpread >= 25) {
       signals.push({
@@ -207,11 +215,14 @@ export function analyseGapsAndRisk(input: DiagnosticInput): DiagnosticResult {
   const strengths = highest.map((d) => `${d.label} (score ${d.score}/4)`);
   const gaps = lowest.map((d) => `${d.label} (score ${d.score}/4)`);
 
+  const awarenessRaw = input?.scores?.awareness;
+  const awareness = typeof awarenessRaw === "number" && !isNaN(awarenessRaw) ? clampScore(awarenessRaw) : 0;
+
   const stabilisers: string[] = [];
   if (averageScore >= 2.5) stabilisers.push("A generally developing-to-established baseline across domains.");
-  if ((input.scores.awareness ?? 0) >= 3) stabilisers.push("Strong orientation reduces misuse and unrealistic expectations.");
-  if ((input.scores.renewal ?? 0) >= 3) stabilisers.push("Renewal practices support continuous improvement and resilience.");
-  if ((input.scores.governance ?? 0) >= 3) stabilisers.push("Governance strength improves defensibility of decisions.");
+  if (awareness >= 3) stabilisers.push("Strong orientation reduces misuse and unrealistic expectations.");
+  if (renewal >= 3) stabilisers.push("Renewal practices support continuous improvement and resilience.");
+  if (governance >= 3) stabilisers.push("Governance strength improves defensibility of decisions.");
 
   // If no signals, still output something helpful
   if (signals.length === 0) {

@@ -50,6 +50,7 @@ export default function App() {
 
         {stage === "diagnostic" && (
           <DiagnosticView
+            initialInput={input}
             onSubmit={(data) => {
               setInput(data);
               setStage("results");

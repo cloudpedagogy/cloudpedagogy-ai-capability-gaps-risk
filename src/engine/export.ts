@@ -8,8 +8,8 @@ import type { DiagnosticResult } from "./analysis";
 export function generateStressTestJson(input: DiagnosticInput, result: DiagnosticResult) {
   const exportData = {
     metadata: {
-      organisation: input.orgName,
-      context: input.contextNotes,
+      organisation: input.orgName ?? "",
+      context: input.contextNotes ?? "",
       capability_notes: input.capabilityNotes,
       governance_notes: input.governanceNotes,
       timestamp: new Date().toISOString(),
@@ -40,11 +40,11 @@ export function generateStressTestJson(input: DiagnosticInput, result: Diagnosti
       }))
     },
     context_flags: {
-      high_stakes_use: input.signals.highStakesUse,
-      public_facing: input.signals.publicFacing,
-      sensitive_data: input.signals.sensitiveData,
-      vendor_reliance: input.signals.vendorReliance,
-      unclear_ownership: input.signals.unclearOwnership
+      high_stakes_use: Boolean(input.signals?.highStakesUse),
+      public_facing: Boolean(input.signals?.publicFacing),
+      sensitive_data: Boolean(input.signals?.sensitiveData),
+      vendor_reliance: Boolean(input.signals?.vendorReliance),
+      unclear_ownership: Boolean(input.signals?.unclearOwnership)
     }
   };
 
@@ -57,7 +57,9 @@ export function downloadStressTestJson(input: DiagnosticInput, result: Diagnosti
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const filename = `stress-test-input-${input.orgName.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`;
+  const rawOrg = (input.orgName || "organisation").toLowerCase().replace(/\s+/g, "-");
+  const cleanOrg = rawOrg.replace(/[^a-z0-9_-]/g, "") || "organisation";
+  const filename = `stress-test-input-${cleanOrg}-${new Date().toISOString().split("T")[0]}.json`;
   a.download = filename;
   document.body.appendChild(a);
   a.click();

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Card from "../components/Card";
 import DomainBars from "../components/DomainBars";
 import SignalBadge from "../components/SignalBadge";
@@ -128,6 +128,14 @@ function buildExportText(input: DiagnosticInput, result: DiagnosticResult, gener
   return lines.join("\n");
 }
 
+function getInitialOpenWhy(signals: DiagnosticResult["signals"]): Record<string, boolean> {
+  const initial: Record<string, boolean> = {};
+  for (const sig of signals) {
+    if (sig.level === "Concern") initial[sig.id] = true;
+  }
+  return initial;
+}
+
 export default function ResultsView(props: {
   input: DiagnosticInput;
   result: DiagnosticResult;
@@ -136,16 +144,14 @@ export default function ResultsView(props: {
   const { input, result } = props;
 
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
-  const [openWhy, setOpenWhy] = useState<Record<string, boolean>>({});
+  const [prevResult, setPrevResult] = useState(result);
+  const [openWhy, setOpenWhy] = useState<Record<string, boolean>>(() => getInitialOpenWhy(result.signals));
   const [generatedAt] = useState<string>(() => nowTimestampUTC());
 
-  useEffect(() => {
-    const initial: Record<string, boolean> = {};
-    for (const sig of result.signals) {
-      if (sig.level === "Concern") initial[sig.id] = true;
-    }
-    setOpenWhy(initial);
-  }, [result]);
+  if (prevResult !== result) {
+    setPrevResult(result);
+    setOpenWhy(getInitialOpenWhy(result.signals));
+  }
 
   const exportText = useMemo(
     () => buildExportText(input, result, generatedAt),
